@@ -5,7 +5,7 @@ from google import genai
 _client: genai.Client | None = None
 
 INTERLEAVED_MODEL = "gemini-2.0-flash-exp-image-generation"
-TEXT_MODEL = "gemini-2.0-flash"
+TEXT_MODEL = "gemini-2.5-flash"
 
 
 def get_client() -> genai.Client:

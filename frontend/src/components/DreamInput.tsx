@@ -300,7 +300,7 @@ export default function DreamInput({ onSubmit, isSubmitting }: DreamInputProps) 
         className="mt-6 text-center"
       >
         <p className="text-sm text-white/25">
-          Powered by Gemini 2.0 Flash — interleaved text + image generation
+          Powered by Gemini 2.5 Flash + Interleaved Image Generation
         </p>
       </motion.div>
     </motion.div>

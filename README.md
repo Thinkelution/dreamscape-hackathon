@@ -10,7 +10,7 @@ Built for the [Gemini Live Agent Challenge](https://googleai.devpost.com/) — C
 
 ## What It Does
 
-Dreamscape transforms messy, fragmented dream descriptions into immersive multimedia experiences — surrealist short films combining AI-generated imagery, narrated voiceover, and dissolving transitions. Over time, it builds a visual dream journal and identifies recurring symbols, emotional arcs, and thematic patterns.
+Dreamscape transforms messy, fragmented dream descriptions into immersive multimedia experiences — surrealist short films combining AI-generated imagery, narrated voiceover, and crossfade transitions. Users can customize the visual art style, dreamer appearance, and narrator voice. After generation, an AI insight agent analyzes the dream to reveal personality traits and emotional patterns.
 
 ### Core Feature: Gemini Interleaved Output
 
@@ -19,11 +19,11 @@ The Visual Director agent uses **Gemini 2.0 Flash's native interleaved output** 
 ## Architecture
 
 ```
-User Dream Text
+User Dream Text + Config
       |
       v
 +-------------------+
-| Dream Interpreter |  Gemini 2.0 Flash -> DreamSchema JSON
+| Dream Interpreter |  Gemini 2.5 Flash -> DreamSchema JSON
 +--------+----------+
          v
 +-------------------+
@@ -31,15 +31,15 @@ User Dream Text
 +--------+----------+
          v
 +-------------------+
-| Narrative Voice   |  Cloud TTS (WaveNet) -> WAV Audio
+| Narrative Voice   |  Cloud TTS (Neural2, 8 voice presets) -> WAV Audio
 +--------+----------+
          v
 +-------------------+
-| Scene Composer    |  FFmpeg -> MP4 Video
+| Scene Composer    |  FFmpeg -> MP4 Video (audio-driven duration)
 +--------+----------+
          v
 +-------------------+
-| Dream Analyst     |  Gemini (async) -> ThemeReport
+| Dream Insight     |  Gemini 2.5 Flash -> Personality & Attitude Analysis
 +-------------------+
 ```
 
@@ -47,36 +47,45 @@ User Dream Text
 
 | Agent | Model/Service | Temperature | Output |
 |-------|--------------|-------------|--------|
-| Dream Interpreter | gemini-2.0-flash | 0.7 | Structured DreamSchema JSON |
-| Visual Director | gemini-2.0-flash-exp-image-generation | 0.9 | Interleaved text + images |
-| Narrative Voice | Cloud TTS (WaveNet en-US-Wavenet-D) | N/A | WAV audio (pitch: -2.0, rate: 0.75x) |
-| Scene Composer | FFmpeg | N/A | MP4 with Ken Burns, dissolves |
-| Dream Analyst | gemini-2.0-flash | 0.5 | ThemeReport JSON |
+| Dream Interpreter | gemini-2.5-flash | 0.7 | Structured DreamSchema JSON |
+| Visual Director | gemini-2.0-flash-exp-image-generation | 0.9 | Interleaved text + images (7 art styles) |
+| Narrative Voice | Cloud TTS Neural2 (8 voice presets) | N/A | WAV audio (1.0x rate, configurable gender/style) |
+| Scene Composer | FFmpeg | N/A | MP4 with crossfade transitions, audio-driven duration |
+| Dream Insight | gemini-2.5-flash | 0.6 | Personality traits, attitude summary |
+
+### User Customization
+
+| Setting | Options |
+|---------|---------|
+| Visual Style | Anime, Realistic, Watercolor, Oil Painting, Pixel Art, Cyberpunk, Fantasy |
+| Dreamer Profile | Gender, age range, ethnicity — influences character depiction in scenes |
+| Narrator Voice | Female/Male x Calm/Warm/Dramatic/Youthful (8 Neural2 voice presets) |
 
 ## Tech Stack
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| AI Model | Gemini 2.0 Flash | Interleaved multimodal output, dream interpretation |
+| AI Models | Gemini 2.5 Flash, Gemini 2.0 Flash (interleaved) | Dream interpretation, image generation, personality analysis |
 | SDK | Google GenAI SDK (Python) | Direct Gemini API calls with interleaved output |
 | Backend | Python 3.12 + FastAPI | REST API, WebSocket streaming, async pipeline |
-| Frontend | Next.js 14 + React + TailwindCSS | Dream input, film player, journal, analysis |
-| Video | FFmpeg | Ken Burns effect, text overlays, audio mixing |
-| Voice | Google Cloud Text-to-Speech | Ethereal narration voiceover |
+| Frontend | Next.js 14 + React + TailwindCSS + Framer Motion | Dream input, film player, journal, analysis |
+| Video | FFmpeg | Crossfade transitions, audio mixing, audio-driven scene duration |
+| Voice | Google Cloud Text-to-Speech (Neural2) | 8 configurable narrator voice presets |
 | Database | Cloud Firestore (Native mode) | Dream entries, themes, analysis data |
 | Storage | Cloud Storage (`dreamscape-media`) | Images, audio, video files |
 | Auth | Firebase Authentication (Google Sign-In) | User identity |
 | Backend Hosting | Cloud Run | Containerized backend service |
 | Frontend Hosting | Firebase Hosting | Static frontend + API proxy to Cloud Run |
 | Containers | Docker + Artifact Registry | Container image management |
+| CI/CD | Cloud Build | Automated container builds |
 
 ## Google Cloud Services Used
 
-1. **Generative Language API** (Gemini 2.0 Flash) — dream interpretation, image generation, theme analysis
+1. **Generative Language API** (Gemini 2.5 Flash + 2.0 Flash interleaved) — dream interpretation, image generation, personality analysis
 2. **Cloud Run** — backend hosting with auto-scaling
 3. **Cloud Firestore** — dream data storage (Native mode)
 4. **Cloud Storage** — media file storage (images, audio, video)
-5. **Cloud Text-to-Speech** — WaveNet narration voiceover
+5. **Cloud Text-to-Speech** — Neural2 narration voiceover (8 voice presets)
 6. **Firebase Authentication** — Google Sign-In
 7. **Firebase Hosting** — frontend hosting with Cloud Run proxy
 8. **Artifact Registry** — Docker image repository
@@ -94,10 +103,10 @@ User Dream Text
 
 ```bash
 # 1. Clone
-git clone https://github.com/YOUR_USERNAME/dreamscape.git
-cd dreamscape
+git clone https://github.com/Thinkelution/dreamscape-hackathon.git
+cd dreamscape-hackathon
 
-# 2. GCP auth (replaces the need for any service account key)
+# 2. GCP auth
 gcloud auth login
 gcloud config set project dreamscape-hackathon
 gcloud auth application-default login
@@ -152,10 +161,29 @@ This builds the backend Docker image via Cloud Build, deploys to Cloud Run, buil
 | `POST` | `/api/analysis/refresh` | Trigger fresh journal analysis |
 | `WS` | `/api/dreams/:id/stream` | Real-time progress via WebSocket |
 
+### Dream Creation Request
+
+```json
+{
+  "text": "I was flying over an ocean of glass...",
+  "user_id": "anonymous",
+  "art_style": "anime",
+  "dreamer_profile": {
+    "gender": "female",
+    "age_range": "young adult",
+    "ethnicity": "south-asian"
+  },
+  "narrator_config": {
+    "gender": "female",
+    "style": "calm"
+  }
+}
+```
+
 ## Project Structure
 
 ```
-dreamscape/
+dreamscape-hackathon/
 ├── README.md
 ├── ARCHITECTURE.md
 ├── deploy.sh
@@ -167,11 +195,12 @@ dreamscape/
 │   ├── requirements.txt
 │   ├── main.py                    # FastAPI entry point
 │   ├── agents/
-│   │   ├── dream_interpreter.py   # Gemini dream parsing
+│   │   ├── dream_interpreter.py   # Gemini 2.5 Flash dream parsing
 │   │   ├── visual_director.py     # Interleaved output agent (CORE)
-│   │   ├── narrative_voice.py     # Cloud TTS narration
+│   │   ├── narrative_voice.py     # Cloud TTS Neural2 narration (8 presets)
 │   │   ├── scene_composer.py      # FFmpeg video composition
-│   │   └── dream_analyst.py       # Recurring theme analysis
+│   │   ├── dream_analyst.py       # Recurring theme analysis
+│   │   └── dream_insight.py       # Per-dream personality analysis
 │   ├── models/
 │   │   └── schemas.py             # Pydantic data models
 │   ├── services/
@@ -182,7 +211,6 @@ dreamscape/
 │       ├── dreams.py              # Dream endpoints + WebSocket
 │       └── analysis.py            # Analysis endpoints
 ├── frontend/
-│   ├── Dockerfile
 │   ├── package.json
 │   └── src/
 │       ├── app/
@@ -192,9 +220,9 @@ dreamscape/
 │       ├── components/
 │       │   ├── StarField.tsx
 │       │   ├── Header.tsx
-│       │   ├── DreamInput.tsx
+│       │   ├── DreamInput.tsx       # Art style + dreamer + narrator config
 │       │   ├── GenerationProgress.tsx
-│       │   ├── DreamFilmPlayer.tsx
+│       │   ├── DreamFilmPlayer.tsx  # Film player + personality insights
 │       │   ├── DreamJournal.tsx
 │       │   └── AnalysisDashboard.tsx
 │       ├── hooks/

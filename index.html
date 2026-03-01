@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thinkelution - AI Research Lab | Open-Source Models for Video, Audio & Media Generation</title>
+    <meta name="description" content="Thinkelution builds and publishes open-source AI models for video, audio & media generation. Fine-tuned models, original datasets, and AI-powered tools — built in the open. STEM Learning: deskmate-lms.thinkelution.com & stembots.in.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%230f172a'/><path d='M6 6 L26 6 L26 10 L19 10 L19 26 L13 26 L13 10 L6 10 Z' fill='%233b82f6'/></svg>">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --primary:#0f172a;--primary-soft:#1e293b;--accent:#3b82f6;--accent-hover:#2563eb;
+            --accent-glow:rgba(59,130,246,.12);--green:#10b981;--purple:#8b5cf6;--orange:#f59e0b;
+            --text:#0f172a;--text-muted:#64748b;--text-light:#94a3b8;
+            --border:#e2e8f0;--border-subtle:#f1f5f9;--bg:#f8fafc;--bg-card:#ffffff;
+            --radius:0.5rem;--radius-lg:0.75rem;
+            --shadow:0 1px 3px rgba(0,0,0,.06);--shadow-hover:0 4px 16px rgba(0,0,0,.08);
+        }
+        body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.6;color:var(--text);background:var(--bg);font-weight:400;font-size:15px}
+        .container{max-width:1100px;margin:0 auto;padding:0 1rem}
+
+        /* Header */
+        header{position:fixed;top:0;width:100%;background:rgba(255,255,255,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);z-index:1000;border-bottom:1px solid var(--border)}
+        nav{display:flex;justify-content:space-between;align-items:center;padding:0.625rem 0}
+        .logo{display:flex;align-items:center;gap:0.35rem;font-size:1.2rem;font-weight:700;color:var(--primary);text-decoration:none;letter-spacing:-0.02em}
+        .logo-icon{width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:800;font-size:14px}
+        .nav-links{display:flex;list-style:none;gap:0;align-items:center}
+        .nav-links a{text-decoration:none;color:var(--text-muted);font-weight:500;font-size:.9rem;transition:all .2s;padding:.4rem .75rem;border-radius:var(--radius)}
+        .nav-links a:hover{color:var(--primary);background:var(--bg)}
+        .nav-links a.active-link{color:var(--primary);font-weight:600}
+        .menu-toggle{display:none;background:none;border:none;font-size:1.25rem;color:var(--text);cursor:pointer}
+
+        /* Tab Switcher */
+        .tab-switcher{display:flex;align-items:center;gap:2px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:3px;margin-left:1rem}
+        .tab-btn{padding:.35rem .75rem;border:none;background:transparent;font-family:inherit;font-size:.8rem;font-weight:600;color:var(--text-muted);cursor:pointer;border-radius:6px;transition:all .2s;display:flex;align-items:center;gap:.35rem;white-space:nowrap}
+        .tab-btn:hover{color:var(--primary)}
+        .tab-btn.active{background:var(--bg-card);color:var(--primary);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+        .tab-btn i{font-size:.75rem}
+
+        /* Section visibility */
+        .tab-content{display:none}
+        .tab-content.visible{display:block}
+
+        /* Hero */
+        .hero{padding:6rem 0 3rem;text-align:center;background:var(--bg-card);border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+        .hero::before{content:'';position:absolute;top:-120px;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,var(--accent-glow) 0%,transparent 70%);pointer-events:none}
+        .hero-label{display:inline-flex;align-items:center;gap:.4rem;background:var(--primary);color:white;padding:.3rem .8rem;border-radius:2rem;font-size:.75rem;font-weight:600;margin-bottom:1rem;letter-spacing:.02em}
+        .hero-label .dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+        .hero h1{font-size:2.2rem;font-weight:800;color:var(--primary);margin-bottom:.6rem;letter-spacing:-.04em;line-height:1.15}
+        .hero h1 .highlight{background:linear-gradient(135deg,var(--accent),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .hero p{font-size:1rem;color:var(--text-muted);max-width:600px;margin:0 auto 1.5rem;line-height:1.6}
+        .hero-links{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem}
+        .btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1rem;border-radius:var(--radius);text-decoration:none;font-weight:600;font-size:.875rem;transition:all .2s;border:1px solid transparent}
+        .btn-primary{background:var(--accent);color:white}
+        .btn-primary:hover{background:var(--accent-hover);box-shadow:var(--shadow-hover)}
+        .btn-secondary{background:var(--bg);color:var(--text);border-color:var(--border)}
+        .btn-secondary:hover{border-color:var(--text-light);color:var(--primary)}
+        .btn-dark{background:var(--primary);color:white}
+        .btn-dark:hover{background:var(--primary-soft)}
+        .btn-stem{background:var(--green);color:white}
+        .btn-stem:hover{background:#059669}
+        .hero-stats{display:flex;gap:2rem;justify-content:center;flex-wrap:wrap;padding-top:1.5rem;border-top:1px solid var(--border);max-width:500px;margin:0 auto}
+        .hero-stat{text-align:center}
+        .hero-stat .num{font-size:1.3rem;font-weight:800;color:var(--primary);display:block}
+        .hero-stat .lbl{font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em}
+
+        /* Sections */
+        section{scroll-margin-top:56px}
+        .section-pad{padding:3rem 0}
+        .section-header{text-align:center;margin-bottom:1.75rem}
+        .section-header h2{font-size:1.5rem;font-weight:700;margin-bottom:.35rem;color:var(--primary);letter-spacing:-.02em}
+        .section-header p{font-size:.9rem;color:var(--text-muted);max-width:540px;margin:0 auto}
+
+        /* Models */
+        .models-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem}
+        .model-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow);transition:all .2s}
+        .model-card:hover{box-shadow:var(--shadow-hover);border-color:var(--text-light)}
+        .model-top{display:flex;align-items:center;gap:.75rem;padding:1rem 1.25rem;border-bottom:1px solid var(--border-subtle)}
+        .model-icon{width:40px;height:40px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:white;flex-shrink:0}
+        .model-top h3{font-size:.95rem;font-weight:600;color:var(--primary)}
+        .model-top .model-tag{font-size:.65rem;font-weight:600;padding:.15rem .45rem;border-radius:3px;text-transform:uppercase;letter-spacing:.03em}
+        .model-body{padding:1.25rem}
+        .model-body p{font-size:.85rem;color:var(--text-muted);line-height:1.55;margin-bottom:.75rem}
+        .model-tech{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.75rem}
+        .model-tech span{font-size:.7rem;padding:.2rem .5rem;background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text-muted);font-weight:500}
+        .model-status{display:flex;align-items:center;gap:.35rem;font-size:.75rem;font-weight:500}
+        .status-dot{width:7px;height:7px;border-radius:50%}
+
+        /* Services */
+        .services-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem}
+        .service-card{background:var(--bg-card);padding:1.25rem;border-radius:var(--radius-lg);border:1px solid var(--border);box-shadow:var(--shadow);transition:all .2s}
+        .service-card:hover{box-shadow:var(--shadow-hover);border-color:var(--text-light)}
+        .service-icon{width:40px;height:40px;background:var(--primary-soft);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;margin-bottom:.75rem;color:white;font-size:1rem}
+        .service-card h3{font-size:1rem;font-weight:600;margin-bottom:.35rem;color:var(--primary)}
+        .service-card p{color:var(--text-muted);font-size:.875rem;line-height:1.5}
+
+        /* OS Banner */
+        .os-banner{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;box-shadow:var(--shadow);margin-top:1.75rem}
+        .os-banner-text h3{font-size:1rem;font-weight:600;color:var(--primary);margin-bottom:.2rem}
+        .os-banner-text p{font-size:.85rem;color:var(--text-muted)}
+
+        /* Open Source Explorer */
+        .os-explorer{display:grid;grid-template-columns:280px 1fr;gap:1.5rem;min-height:420px}
+        .os-list{display:flex;flex-direction:column;gap:2px}
+        .os-list-item{display:flex;align-items:center;gap:.75rem;padding:.85rem 1rem;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .2s;position:relative}
+        .os-list-item:hover,.os-list-item.active{border-color:var(--accent);background:var(--accent-glow)}
+        .os-list-item.active{box-shadow:0 0 0 1px var(--accent)}
+        .os-list-item.active::after{content:'';position:absolute;right:-12px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:8px solid transparent;border-bottom:8px solid transparent;border-left:8px solid var(--accent)}
+        .os-list-icon{width:36px;height:36px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:.9rem;color:white;flex-shrink:0}
+        .os-list-info h4{font-size:.9rem;font-weight:600;color:var(--primary);margin-bottom:.1rem}
+        .os-list-info p{font-size:.72rem;color:var(--text-muted);line-height:1.3}
+        .os-detail{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+        .os-detail-panel{display:none;flex-direction:column;height:100%}
+        .os-detail-panel.active{display:flex}
+        .os-detail-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;gap:.75rem}
+        .os-detail-header h3{font-size:1.1rem;font-weight:700;color:var(--primary)}
+        .os-detail-body{padding:1.25rem 1.5rem;flex:1;overflow-y:auto}
+        .os-detail-body p{font-size:.88rem;color:var(--text-muted);line-height:1.6;margin-bottom:.75rem}
+        .os-detail-features{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.4rem;margin:.75rem 0}
+        .os-detail-feat{display:flex;align-items:center;gap:.4rem;font-size:.8rem;color:var(--text-muted)}
+        .os-detail-feat i{font-size:.7rem;flex-shrink:0}
+        .os-detail-footer{padding:1rem 1.5rem;border-top:1px solid var(--border-subtle);display:flex;gap:.5rem;flex-wrap:wrap}
+        @media(max-width:768px){
+            .os-explorer{grid-template-columns:1fr;min-height:auto}
+            .os-list-item.active::after{display:none}
+            .os-list{flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:4px}
+            .os-list-item{white-space:nowrap;flex-shrink:0;padding:.6rem .75rem}
+            .os-list-info p{display:none}
+        }
+
+        /* Products */
+        .products-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem}
+        .product-card{background:var(--bg-card);border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow);transition:all .2s}
+        .product-card:hover{box-shadow:var(--shadow-hover);border-color:var(--text-light)}
+        .product-header{color:white;padding:1.25rem;text-align:center}
+        .product-header h3{font-size:1.1rem;font-weight:600;margin-bottom:.25rem}
+        .product-header p{font-size:.8rem;opacity:.9}
+        .product-content{padding:1.25rem}
+        .product-content p{font-size:.875rem;color:var(--text-muted);line-height:1.5}
+
+        /* About */
+        .about-content{display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:center}
+        .about-text h2{font-size:1.5rem;font-weight:700;margin-bottom:.5rem;color:var(--primary)}
+        .about-text p{color:var(--text-muted);margin-bottom:1rem;font-size:.9rem;line-height:1.6}
+        .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem}
+        .stat{text-align:center;padding:.75rem;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border)}
+        .stat-number{font-size:1.35rem;font-weight:700;color:var(--primary);display:block}
+        .stat-label{color:var(--text-muted);font-size:.75rem}
+
+        /* Contact */
+        .contact-content{display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+        .contact-info h3{font-size:1.2rem;font-weight:600;margin-bottom:.5rem;color:var(--primary)}
+        .contact-info p{color:var(--text-muted);margin-bottom:1rem;font-size:.9rem}
+        .contact-details{list-style:none}
+        .contact-details li{display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;font-size:.9rem;color:var(--text-muted)}
+        .contact-details i{width:18px;color:var(--text-light)}
+
+        /* STEM Hero */
+        .stem-hero{padding:6rem 0 3rem;text-align:center;background:var(--bg-card);border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+        .stem-hero::before{content:'';position:absolute;top:-120px;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(16,185,129,.1) 0%,transparent 70%);pointer-events:none}
+        .stem-hero h1{font-size:2.2rem;font-weight:800;color:var(--primary);margin-bottom:.6rem;letter-spacing:-.04em;line-height:1.15}
+        .stem-hero h1 .highlight{background:linear-gradient(135deg,var(--green),#059669);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .stem-hero p{font-size:1rem;color:var(--text-muted);max-width:580px;margin:0 auto 1.5rem;line-height:1.6}
+
+        /* Footer */
+        footer{background:var(--bg-card);padding:2rem 0;border-top:1px solid var(--border)}
+
+        /* Responsive */
+        @media(max-width:768px){
+            .menu-toggle{display:block}
+            .nav-links{display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg-card);flex-direction:column;padding:.75rem;border-bottom:1px solid var(--border);gap:0}
+            .nav-links.active{display:flex}
+            .tab-switcher{margin:0 0 .5rem 0;align-self:stretch;justify-content:center}
+            .hero,.stem-hero{padding:4.5rem 0 2rem}
+            .hero h1,.stem-hero h1{font-size:1.5rem}
+            .about-content,.contact-content{grid-template-columns:1fr}
+            .services-grid,.products-grid,.models-grid{grid-template-columns:1fr}
+            .hero-stats{gap:1.25rem}
+            .os-banner{flex-direction:column;text-align:center}
+        }
+        html{scroll-behavior:smooth;scroll-padding-top:56px}
+        .fade-in{opacity:0;transform:translateY(12px);transition:opacity .4s ease,transform .4s ease}
+        .fade-in.visible{opacity:1;transform:translateY(0)}
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <nav class="container">
+            <a href="#" class="logo">
+                <div class="logo-icon">T</div>
+                <span>Thinkelution</span>
+            </a>
+            <ul class="nav-links">
+                <!-- Tab Switcher -->
+                <li>
+                    <div class="tab-switcher">
+                        <button class="tab-btn active" data-tab="ai"><i class="fas fa-brain"></i> AI Lab</button>
+                        <button class="tab-btn" data-tab="stem"><i class="fas fa-graduation-cap"></i> STEM Learning</button>
+                    </div>
+                </li>
+                <!-- AI Nav Links -->
+                <li class="nav-item ai-nav"><a href="#services">Services</a></li>
+                <li class="nav-item ai-nav"><a href="#opensource">Open Source</a></li>
+                <!-- STEM Nav Links -->
+                <li class="nav-item stem-nav" style="display:none"><a href="#programs">Programs</a></li>
+                <li class="nav-item stem-nav" style="display:none"><a href="#curriculum">Curriculum</a></li>
+                <!-- Shared -->
+                <li class="nav-item"><a href="#about">About</a></li>
+                <li class="nav-item"><a href="#contact">Contact</a></li>
+            </ul>
+            <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+        </nav>
+    </header>
+
+    <!-- ============================================ -->
+    <!-- AI TAB CONTENT -->
+    <!-- ============================================ -->
+    <div id="ai-content" class="tab-content visible">
+
+        <!-- AI Hero - Consulting primary -->
+        <section id="home" class="hero">
+            <div class="container" style="position:relative">
+                <div class="hero-label"><span class="dot"></span> Primary Focus</div>
+                <h1><span class="highlight">AI Consulting</span> for Your<br>Product & Service Workflow</h1>
+                <p>We help you integrate AI into what you build — custom AI model integration, custom chat agents, and AI agents to automate and improve efficiency. Comprehensive consulting from design to deployment.</p>
+                <div class="hero-links">
+                    <a href="#services" class="btn btn-primary"><i class="fas fa-handshake"></i> Our Services</a>
+                    <a href="#contact" class="btn btn-secondary"><i class="fas fa-envelope"></i> Get in Touch</a>
+                    <a href="#opensource" class="btn btn-secondary"><i class="fas fa-code-branch"></i> Open Source Projects</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="hero-stat"><span class="num">Custom</span><span class="lbl">AI Integration</span></div>
+                    <div class="hero-stat"><span class="num">Chat</span><span class="lbl">Agents & Automation</span></div>
+                    <div class="hero-stat"><span class="num">18+</span><span class="lbl">Yrs in Media Tech</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Services - Consulting (primary) -->
+        <section id="services" class="section-pad">
+            <div class="container">
+                <div class="section-header fade-in">
+                    <h2>What We Do</h2>
+                    <p>Comprehensive consulting for integrating AI into your product or service workflow</p>
+                </div>
+                <div class="fade-in" style="max-width:720px;margin:0 auto 1.75rem;padding:1.25rem;background:linear-gradient(135deg, rgba(59,130,246,.06), rgba(139,92,246,.06));border:1px solid var(--border);border-radius:var(--radius-lg);">
+                    <p style="margin:0;font-size:.95rem;color:var(--text);line-height:1.6"><strong>AI consulting for your workflow.</strong> We provide comprehensive consulting for integrating AI into your product or service workflow — whether you need <strong>custom AI model integration</strong>, <strong>custom AI chat agents</strong>, or <strong>AI agents to automate and improve efficiency</strong>. We help you design, build, and deploy the right AI solution for your business.</p>
+                </div>
+                <div class="services-grid">
+                    <div class="service-card fade-in">
+                        <div class="service-icon" style="background:linear-gradient(135deg,var(--accent),var(--purple))"><i class="fas fa-plug"></i></div>
+                        <h3>Custom AI Model Integration</h3>
+                        <p>Integrate AI models into your existing product or service workflow. We design and implement custom integrations — from APIs and pipelines to fine-tuned models that fit your use case and data.</p>
+                    </div>
+                    <div class="service-card fade-in">
+                        <div class="service-icon" style="background:linear-gradient(135deg,var(--green),#059669)"><i class="fas fa-comments"></i></div>
+                        <h3>Custom AI Chat Agents</h3>
+                        <p>Build AI chat agents tailored to your domain — customer support, internal tools, knowledge assistants, or conversational interfaces. We design agents that understand your context and improve user experience.</p>
+                    </div>
+                    <div class="service-card fade-in">
+                        <div class="service-icon" style="background:linear-gradient(135deg,var(--orange),#dc2626)"><i class="fas fa-robot"></i></div>
+                        <h3>AI Agents for Automation</h3>
+                        <p>Deploy AI agents to automate tasks and improve efficiency across your workflow. From document processing and decision support to end-to-end automation — we help you identify and implement high-impact use cases.</p>
+                    </div>
+                    <div class="service-card fade-in">
+                        <div class="service-icon" style="background:linear-gradient(135deg,var(--accent),var(--purple))"><i class="fas fa-brain"></i></div>
+                        <h3>AI Model Development</h3>
+                        <p>Fine-tuning, architecture modification, and training specialized models for media generation. LoRA, DreamBooth, custom adapters, and from-scratch training on focused tasks.</p>
+                    </div>
+                    <div class="service-card fade-in">
+                        <div class="service-icon" style="background:var(--primary-soft)"><i class="fas fa-code-branch"></i></div>
+                        <h3>Open Source AI/ML</h3>
+                        <p>Publishing models, datasets, and training code in the open. Active contributions to the AI/ML ecosystem. Reproducible research with full training pipelines on GitHub.</p>
+                    </div>
+                    <div class="service-card fade-in">
+                        <div class="service-icon" style="background:linear-gradient(135deg,var(--green),#059669)"><i class="fas fa-project-diagram"></i></div>
+                        <h3>Multi-Model AI Pipelines</h3>
+                        <p>Chaining models into end-to-end workflows — text to image to video to voice narration. Novel pipelines that combine our models into unique products.</p>
+                    </div>
+                    <div class="service-card fade-in">
+                        <div class="service-icon" style="background:linear-gradient(135deg,var(--orange),#dc2626)"><i class="fas fa-broadcast-tower"></i></div>
+                        <h3>Automated Media Streaming</h3>
+                        <p>Development of automated media streaming tools — ingestion, transcoding, delivery, and orchestration. 18+ years of streaming protocol expertise.</p>
+                    </div>
+                    <div class="service-card fade-in">
+                        <div class="service-icon" style="background:var(--primary-soft)"><i class="fas fa-cogs"></i></div>
+                        <h3>AI Apps & Models as a Service</h3>
+                        <p>End-to-end services for building and deploying AI-powered applications and custom models. From design and training to integration and production deployment.</p>
+                    </div>
+                    <div class="service-card fade-in">
+                        <div class="service-icon" style="background:linear-gradient(135deg,var(--purple),#7c3aed)"><i class="fas fa-chart-bar"></i></div>
+                        <h3>Benchmarking & Research</h3>
+                        <p>Rigorous evaluation of open-source models. Published benchmarks, comparison reports, and technical analysis to help the community make informed choices.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Clients -->
+        <section style="padding:2rem 0;border-top:1px solid var(--border);background:var(--bg)">
+            <div class="container">
+                <div class="fade-in" style="text-align:center">
+                    <p style="font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-light);font-weight:600;margin-bottom:1rem">Clients that trust us</p>
+                    <div style="display:flex;align-items:center;justify-content:center;gap:2.5rem;flex-wrap:wrap">
+                        <a href="https://onestudio.tv" target="_blank" rel="noopener" style="text-decoration:none;opacity:.7;transition:opacity .2s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.7'">
+                            <img src="https://onestudio.tv/wp-content/themes/samui-child/img/onestudio-logo-new.png" alt="OneStudio.tv" style="height:40px;width:auto">
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Open Source Tools -->
+        <section id="opensource" style="padding:2.5rem 0;border-top:1px solid var(--border)">
+            <div class="container">
+                <div class="section-header fade-in">
+                    <h2><i class="fas fa-code-branch" style="margin-right:.4rem;font-size:1.1rem;color:var(--green)"></i> Open Source Projects</h2>
+                    <p>Production-grade tools and frameworks we build and publish open-source</p>
+                </div>
+                <div class="os-explorer fade-in">
+                    <!-- Left: Project List -->
+                    <div class="os-list">
+                        <div class="os-list-item active" data-project="dreamscape">
+                            <div class="os-list-icon" style="background:linear-gradient(135deg,#1e1b4b,#312e81)"><i class="fas fa-moon"></i></div>
+                            <div class="os-list-info">
+                                <h4>Dreamscape</h4>
+                                <p>AI dream journal + film generator</p>
+                            </div>
+                        </div>
+                        <div class="os-list-item" data-project="finsight">
+                            <div class="os-list-icon" style="background:linear-gradient(135deg,var(--orange),#dc2626)"><i class="fas fa-chart-line"></i></div>
+                            <div class="os-list-info">
+                                <h4>FinSight AI</h4>
+                                <p>Financial intelligence + fine-tuned LLM</p>
+                            </div>
+                        </div>
+
+                        <div class="os-list-item" data-project="devlution">
+                            <div class="os-list-icon" style="background:linear-gradient(135deg,var(--accent),var(--purple))"><i class="fas fa-robot"></i></div>
+                            <div class="os-list-info">
+                                <h4>Devlution</h4>
+                                <p>AI-augmented dev workflows</p>
+                            </div>
+                        </div>
+                        <div class="os-list-item" data-project="transcoder">
+                            <div class="os-list-icon" style="background:linear-gradient(135deg,var(--green),#059669)"><i class="fas fa-play-circle"></i></div>
+                            <div class="os-list-info">
+                                <h4>Open FFmpeg Transcoder</h4>
+                                <p>API-driven video transcoding</p>
+                            </div>
+                        </div>
+                        <div class="os-list-item" data-project="mediaforge">
+                            <div class="os-list-icon" style="background:linear-gradient(135deg,var(--purple),#6d28d9)"><i class="fas fa-wand-magic-sparkles"></i></div>
+                            <div class="os-list-info">
+                                <h4>MediaForge MCP</h4>
+                                <p>AI media tools for any LLM</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Detail Panels -->
+                    <div class="os-detail">
+
+                        <!-- Dreamscape -->
+                        <div class="os-detail-panel active" id="detail-dreamscape">
+                            <div class="os-detail-header">
+                                <div class="os-list-icon" style="background:linear-gradient(135deg,#1e1b4b,#312e81)"><i class="fas fa-moon"></i></div>
+                                <div>
+                                    <h3>Dreamscape</h3>
+                                    <span class="model-tag" style="background:rgba(139,92,246,.1);color:var(--purple)">Hackathon — Gemini Live Agent Challenge</span>
+                                </div>
+                            </div>
+                            <div class="os-detail-body">
+                                <p>AI Dream Journal & Surrealist Film Generator. Describe a dream in natural language and watch it transform into a short film with AI-generated imagery, poetic narration, ethereal voiceover, and a personality analysis of the dreamer. Built for the <strong>Google Gemini Live Agent Challenge</strong>, showcasing Gemini's native <strong>interleaved text + image output</strong>.</p>
+                                <div class="model-tech">
+                                    <span>Next.js 14</span><span>React</span><span>TailwindCSS</span><span>Python</span><span>FastAPI</span>
+                                    <span>Gemini 2.0 Flash</span><span>Gemini 2.5 Flash</span><span>Google GenAI SDK</span>
+                                    <span>Cloud TTS</span><span>Cloud Run</span><span>Firebase Hosting</span><span>Firestore</span><span>Cloud Storage</span><span>FFmpeg</span><span>WebSocket</span>
+                                </div>
+                                <div class="os-detail-features">
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--purple)"></i> Interleaved text + image output</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--purple)"></i> 5-agent AI pipeline</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--purple)"></i> 7 visual styles (Anime, Realistic...)</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--purple)"></i> Dreamer profile customization</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--purple)"></i> 8 narrator voice presets</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--purple)"></i> Personality & attitude insights</div>
+                                </div>
+                                <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:.65rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text-muted);overflow-x:auto;white-space:nowrap;line-height:1.8">
+                                    <span style="color:#312e81;font-weight:600">Dream Text</span> → <span style="color:var(--purple)">Interpreter</span> → <span style="color:var(--purple)">Visual Director</span> → <span style="color:var(--purple)">TTS Narrator</span> → <span style="color:var(--purple)">Film Composer</span> → <span style="color:var(--green);font-weight:600">Dream Film + Insights</span>
+                                </div>
+                            </div>
+                            <div class="os-detail-footer">
+                                <a href="https://dreamscape-hackathon.web.app" target="_blank" class="btn btn-primary" style="font-size:.8rem"><i class="fas fa-external-link-alt"></i> Live Demo</a>
+                                <a href="https://github.com/Thinkelution/dreamscape-hackathon" target="_blank" class="btn btn-dark" style="font-size:.8rem"><i class="fab fa-github"></i> GitHub</a>
+                            </div>
+                        </div>
+
+                        <!-- FinSight AI -->
+                        <div class="os-detail-panel" id="detail-finsight">
+                            <div class="os-detail-header">
+                                <div class="os-list-icon" style="background:linear-gradient(135deg,var(--orange),#dc2626)"><i class="fas fa-chart-line"></i></div>
+                                <div>
+                                    <h3>FinSight AI</h3>
+                                    <span class="model-tag" style="background:rgba(245,158,11,.1);color:var(--orange)">Financial Intelligence</span>
+                                </div>
+                            </div>
+                            <div class="os-detail-body">
+                                <p>Real-time financial intelligence system powered by a <strong>fine-tuned Qwen 2.5 14B model</strong> trained on 527 historical market analysis pairs spanning 2016–2026. Combines live news ingestion, vector search (Qdrant), and historical pattern matching to deliver market predictions with confidence scores.</p>
+                                <div class="model-tech">
+                                    <span>Python</span><span>FastAPI</span><span>Qwen 2.5 14B</span><span>LoRA Fine-tune</span><span>Qdrant</span>
+                                    <span>Ollama</span><span>Redis</span><span>Celery</span><span>yfinance</span><span>GGUF Q4_K_M</span>
+                                </div>
+                                <div class="os-detail-features">
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--orange)"></i> Fine-tuned on 527 historical pairs</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--orange)"></i> RAG with time-decay scoring</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--orange)"></i> Historical pattern matching</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--orange)"></i> Live market data (25 assets)</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--orange)"></i> Trend predictions + confidence</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--orange)"></i> GGUF model on Hugging Face</div>
+                                </div>
+                                <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:.65rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text-muted);overflow-x:auto;white-space:nowrap;line-height:1.8">
+                                    <span style="color:var(--orange);font-weight:600">News + Market</span> → <span style="color:var(--purple)">Embed</span> → <span style="color:var(--purple)">Qdrant</span> → <span style="color:var(--purple)">RAG Context</span> → <span style="color:var(--accent)">Fine-tuned LLM</span> → <span style="color:var(--green);font-weight:600">Predictions</span>
+                                </div>
+                            </div>
+                            <div class="os-detail-footer">
+                                <a href="https://github.com/Thinkelution/finsight-ai" target="_blank" class="btn btn-dark" style="font-size:.8rem"><i class="fab fa-github"></i> GitHub</a>
+                                <a href="https://huggingface.co/vivek-nalliah/finsight-qwen2.5-14b-gguf" target="_blank" class="btn btn-secondary" style="font-size:.8rem"><span style="font-size:.85rem">🤗</span> Model on HF</a>
+                                <a href="https://github.com/Thinkelution/finsight-ai#quick-start" target="_blank" class="btn btn-secondary" style="font-size:.8rem"><i class="fas fa-rocket"></i> Quick Start</a>
+                            </div>
+                        </div>
+
+                        <!-- Devlution -->
+                        <div class="os-detail-panel" id="detail-devlution">
+                            <div class="os-detail-header">
+                                <div class="os-list-icon" style="background:linear-gradient(135deg,var(--accent),var(--purple))"><i class="fas fa-robot"></i></div>
+                                <div>
+                                    <h3>Devlution</h3>
+                                    <span class="model-tag" style="background:rgba(59,130,246,.1);color:var(--accent)">AI Dev Framework</span>
+                                </div>
+                            </div>
+                            <div class="os-detail-body">
+                                <p>An open-source framework for <strong>AI-augmented developer workflows</strong> — automates the path from <strong>issue → code → test → PR → merge</strong> with clearly defined human supervision gates. Drop a single config file into any repo and let specialized AI agents plan, code, review, test, and debug.</p>
+                                <div class="model-tech">
+                                    <span>Python</span><span>LangGraph</span><span>Anthropic SDK</span><span>Typer CLI</span><span>Pydantic v2</span>
+                                    <span>PyGitHub</span><span>Slack Bolt</span><span>Langfuse</span><span>pytest</span>
+                                </div>
+                                <div class="os-detail-features">
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--accent)"></i> 5 specialized AI agents</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--accent)"></i> Confidence-gated pipeline</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--accent)"></i> Human supervision gates</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--accent)"></i> Immutable audit trail</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--accent)"></i> GitHub + Slack + Sentry</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--accent)"></i> Single YAML config</div>
+                                </div>
+                                <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:.65rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text-muted);overflow-x:auto;white-space:nowrap;line-height:1.8">
+                                    <span style="color:var(--accent);font-weight:600">Issue</span> → <span style="color:var(--purple)">Planner</span> → <span style="color:var(--purple)">Coder</span> → <span style="color:var(--purple)">Reviewer</span> → <span style="color:var(--purple)">Tester</span> → <span style="color:var(--orange)">Human Gate</span> → <span style="color:var(--green);font-weight:600">PR</span>
+                                </div>
+                            </div>
+                            <div class="os-detail-footer">
+                                <a href="https://github.com/Thinkelution/devlution" target="_blank" class="btn btn-dark" style="font-size:.8rem"><i class="fab fa-github"></i> GitHub</a>
+                                <a href="https://github.com/Thinkelution/devlution#quick-start" target="_blank" class="btn btn-secondary" style="font-size:.8rem"><i class="fas fa-rocket"></i> Quick Start</a>
+                                <a href="https://github.com/Thinkelution/devlution/blob/main/docs/ARCHITECTURE.md" target="_blank" class="btn btn-secondary" style="font-size:.8rem"><i class="fas fa-sitemap"></i> Architecture</a>
+                            </div>
+                        </div>
+
+                        <!-- Open FFmpeg Transcoder -->
+                        <div class="os-detail-panel" id="detail-transcoder">
+                            <div class="os-detail-header">
+                                <div class="os-list-icon" style="background:linear-gradient(135deg,var(--green),#059669)"><i class="fas fa-play-circle"></i></div>
+                                <div>
+                                    <h3>Open FFmpeg Transcoder</h3>
+                                    <span class="model-tag" style="background:rgba(16,185,129,.1);color:var(--green)">Media Tool</span>
+                                </div>
+                            </div>
+                            <div class="os-detail-body">
+                                <p>A production-grade, API-driven video transcoding service built with <strong>Go</strong> and <strong>FFmpeg</strong>. Pull from HTTP, S3, FTP — push to S3, FTP, local. Full REST API for all settings, real-time progress tracking, job queue with priorities, NVIDIA GPU acceleration, and a built-in web dashboard.</p>
+                                <div class="model-tech">
+                                    <span>Go</span><span>FFmpeg</span><span>REST API</span><span>Redis + Asynq</span><span>PostgreSQL</span>
+                                    <span>NVIDIA NVENC</span><span>S3 / FTP / HTTP</span><span>Docker</span><span>Web Dashboard</span>
+                                </div>
+                                <div class="os-detail-features">
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--green)"></i> Any input source → any output</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--green)"></i> All settings via API</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--green)"></i> Job queue & progress tracking</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--green)"></i> NVIDIA GPU acceleration</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--green)"></i> Hardware scoring & benchmarks</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--green)"></i> Docker-ready deployment</div>
+                                </div>
+                            </div>
+                            <div class="os-detail-footer">
+                                <a href="https://github.com/Thinkelution/open-ffmpeg-transcoder" target="_blank" class="btn btn-dark" style="font-size:.8rem"><i class="fab fa-github"></i> GitHub</a>
+                                <a href="https://github.com/Thinkelution/open-ffmpeg-transcoder#quick-start" target="_blank" class="btn btn-secondary" style="font-size:.8rem"><i class="fas fa-rocket"></i> Quick Start</a>
+                                <a href="https://github.com/Thinkelution/open-ffmpeg-transcoder/blob/main/docs/API.md" target="_blank" class="btn btn-secondary" style="font-size:.8rem"><i class="fas fa-book"></i> API Docs</a>
+                            </div>
+                        </div>
+
+                        <!-- MediaForge MCP -->
+                        <div class="os-detail-panel" id="detail-mediaforge">
+                            <div class="os-detail-header">
+                                <div class="os-list-icon" style="background:linear-gradient(135deg,var(--purple),#6d28d9)"><i class="fas fa-wand-magic-sparkles"></i></div>
+                                <div>
+                                    <h3>MediaForge MCP</h3>
+                                    <span class="model-tag" style="background:rgba(139,92,246,.1);color:var(--purple)">MCP Server</span>
+                                </div>
+                            </div>
+                            <div class="os-detail-body">
+                                <p>A <strong>Model Context Protocol server</strong> that gives any AI model a media production studio. Exposes transcription, subtitle generation, audio extraction, and media inspection as tools that <strong>Claude, Cursor, GPT</strong> and any MCP-compatible client can invoke directly. Free hosted instance at <strong>mediaforge.thinkelution.com</strong>.</p>
+                                <div class="model-tech">
+                                    <span>TypeScript</span><span>Node.js</span><span>MCP SDK</span><span>FFmpeg</span><span>Groq Whisper</span>
+                                    <span>SSE Transport</span><span>Express</span><span>Replicate</span>
+                                </div>
+                                <div class="os-detail-features">
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--purple)"></i> Transcribe audio/video (Whisper)</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--purple)"></i> Generate SRT/VTT subtitles</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--purple)"></i> Burn-in subtitles to video</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--purple)"></i> Extract audio (mp3/wav/aac/flac)</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--purple)"></i> Media metadata & inspection</div>
+                                    <div class="os-detail-feat"><i class="fas fa-check" style="color:var(--purple)"></i> Free hosted — zero setup</div>
+                                </div>
+                                <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:.65rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text-muted);overflow-x:auto;white-space:nowrap;line-height:1.8">
+                                    <span style="color:var(--purple);font-weight:600">AI Client</span> → <span style="color:var(--accent)">MCP Protocol (SSE)</span> → <span style="color:var(--accent)">MediaForge</span> → <span style="color:var(--orange)">Groq / FFmpeg</span> → <span style="color:var(--green);font-weight:600">Results</span>
+                                </div>
+                                <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:.65rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text-muted);margin-top:.5rem">
+                                    <span style="color:var(--text-light)">$</span> npx -y @thinkelution/mediaforge-mcp <span style="color:var(--text-light)">&nbsp;# or connect to <span style="color:var(--purple)">mediaforge.thinkelution.com/sse</span></span>
+                                </div>
+                            </div>
+                            <div class="os-detail-footer">
+                                <a href="https://github.com/Thinkelution/mediaforge-mcp" target="_blank" class="btn btn-dark" style="font-size:.8rem"><i class="fab fa-github"></i> GitHub</a>
+                                <a href="https://www.npmjs.com/package/@thinkelution/mediaforge-mcp" target="_blank" class="btn btn-secondary" style="font-size:.8rem"><i class="fab fa-npm"></i> npm</a>
+                                <a href="https://mediaforge.thinkelution.com/health" target="_blank" class="btn btn-secondary" style="font-size:.8rem"><i class="fas fa-heartbeat"></i> Live Server</a>
+                                <a href="https://github.com/Thinkelution/mediaforge-mcp#quick-start--connect-to-the-hosted-server" target="_blank" class="btn btn-secondary" style="font-size:.8rem"><i class="fas fa-rocket"></i> Quick Start</a>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+    <!-- END AI CONTENT -->
+
+
+    <!-- ============================================ -->
+    <!-- STEM TAB CONTENT -->
+    <!-- ============================================ -->
+    <div id="stem-content" class="tab-content">
+
+        <!-- STEM Hero -->
+        <section class="stem-hero">
+            <div class="container" style="position:relative">
+                <div class="hero-label" style="background:var(--green)"><i class="fas fa-graduation-cap" style="font-size:.7rem"></i> STEM.org Certified Programs</div>
+                <h1><span class="highlight">STEM Learning</span> for the<br>Next Generation</h1>
+                <p>Dedicated platforms for one-to-one learning, private tutoring, and comprehensive STEM curriculum for Pre-KG through 12th grade — by a STEM.org Certified Educator.</p>
+                <div class="hero-links">
+                    <a href="https://deskmate-lms.thinkelution.com" target="_blank" class="btn btn-stem"><i class="fas fa-laptop"></i> DeskMate LMS</a>
+                    <a href="https://stembots.in" target="_blank" class="btn btn-secondary"><i class="fas fa-robot"></i> STEMBots</a>
+                    <a href="mailto:renukha@thinkelution.com" class="btn btn-primary"><i class="fas fa-envelope"></i> Contact for Enrollment</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="hero-stat"><span class="num">Pre-KG–12</span><span class="lbl">Grade Range</span></div>
+                    <div class="hero-stat"><span class="num">1:1</span><span class="lbl">Personal Tutoring</span></div>
+                    <div class="hero-stat"><span class="num">STEM.org</span><span class="lbl">Certified</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Platforms -->
+        <section id="programs" class="section-pad">
+            <div class="container">
+                <div class="section-header fade-in">
+                    <h2>Our Platforms</h2>
+                    <p>Two dedicated platforms for structured STEM education and personalized learning</p>
+                </div>
+                <div class="products-grid">
+                    <div class="product-card fade-in">
+                        <div class="product-header" style="background:var(--accent)">
+                            <h3>DeskMate LMS</h3>
+                            <p>One-to-One Learning & Private Tutoring</p>
+                        </div>
+                        <div class="product-content">
+                            <p>Dedicated LMS for one-to-one learning and private tutoring — structured courses, progress tracking, and personalized attention for each student.</p>
+                            <p style="margin-top:.75rem"><strong>deskmate-lms</strong> <span style="color:var(--text-muted);font-size:.8rem"> — Under development</span></p>
+                            <a href="https://deskmate-lms.thinkelution.com" target="_blank" rel="noopener" class="btn btn-primary" style="margin-top:.75rem">Visit deskmate-lms</a>
+                        </div>
+                    </div>
+                    <div class="product-card fade-in">
+                        <div class="product-header" style="background:var(--primary-soft)">
+                            <h3>STEMBots</h3>
+                            <p>STEM Curriculum for Kids</p>
+                        </div>
+                        <div class="product-content">
+                            <p>Portal for STEM curriculum for kids — Science, Technology, Engineering, and Mathematics delivered in an engaging, hands-on format.</p>
+                            <p style="margin-top:.75rem"><strong>stembots.in</strong></p>
+                            <a href="https://stembots.in" target="_blank" rel="noopener" class="btn btn-primary" style="margin-top:.75rem;background:var(--primary-soft)">Visit stembots.in</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Curriculum & Educator -->
+        <section id="curriculum" class="section-pad" style="background:var(--bg);border-top:1px solid var(--border)">
+            <div class="container">
+                <div style="max-width:720px;margin:0 auto">
+                    <div class="service-card fade-in" style="padding:1.5rem">
+                        <div style="text-align:center;margin-bottom:1.25rem">
+                            <span style="display:inline-block;background:var(--green);color:white;padding:.4rem .9rem;border-radius:var(--radius);font-size:.8rem;font-weight:600">
+                                <i class="fas fa-certificate" style="margin-right:.35rem"></i> STEM.org Certified Educator: Renukha Vivek
+                            </span>
+                            <p style="font-size:.9rem;color:var(--text-muted);line-height:1.55;margin-top:.75rem">
+                                Comprehensive program in <strong>Science, Technology, Engineering, and Mathematics</strong> for Pre-KG through 12th grade — age-appropriate curriculum designed for critical thinking and problem-solving.
+                            </p>
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.75rem;margin:1rem 0">
+                            <div style="text-align:center;padding:1rem;background:var(--bg-card);border-radius:var(--radius);border:1px solid var(--border)">
+                                <i class="fas fa-child" style="font-size:1.5rem;color:var(--green);margin-bottom:.5rem"></i>
+                                <h4 style="font-size:.9rem;font-weight:600;margin-bottom:.25rem">Pre-KG to 5th</h4>
+                                <p style="color:var(--text-muted);font-size:.8rem">Hands-on experiments & interactive learning</p>
+                            </div>
+                            <div style="text-align:center;padding:1rem;background:var(--bg-card);border-radius:var(--radius);border:1px solid var(--border)">
+                                <i class="fas fa-user-graduate" style="font-size:1.5rem;color:var(--green);margin-bottom:.5rem"></i>
+                                <h4 style="font-size:.9rem;font-weight:600;margin-bottom:.25rem">6th to 8th</h4>
+                                <p style="color:var(--text-muted);font-size:.8rem">Project-based & real-world applications</p>
+                            </div>
+                            <div style="text-align:center;padding:1rem;background:var(--bg-card);border-radius:var(--radius);border:1px solid var(--border)">
+                                <i class="fas fa-microscope" style="font-size:1.5rem;color:var(--green);margin-bottom:.5rem"></i>
+                                <h4 style="font-size:.9rem;font-weight:600;margin-bottom:.25rem">9th to 12th</h4>
+                                <p style="color:var(--text-muted);font-size:.8rem">College-prep & competitive preparation</p>
+                            </div>
+                        </div>
+                        <div style="margin:1.25rem 0">
+                            <h3 style="font-size:1rem;font-weight:600;margin-bottom:.75rem;text-align:center">Program Features</h3>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.5rem">
+                                <div style="display:flex;align-items:start;gap:.5rem"><i class="fas fa-check" style="color:var(--green);font-size:.75rem;margin-top:.35rem"></i><span style="font-size:.85rem;color:var(--text-muted)">STEM certified curriculum</span></div>
+                                <div style="display:flex;align-items:start;gap:.5rem"><i class="fas fa-check" style="color:var(--green);font-size:.75rem;margin-top:.35rem"></i><span style="font-size:.85rem;color:var(--text-muted)">Hands-on learning</span></div>
+                                <div style="display:flex;align-items:start;gap:.5rem"><i class="fas fa-check" style="color:var(--green);font-size:.75rem;margin-top:.35rem"></i><span style="font-size:.85rem;color:var(--text-muted)">Age-appropriate content</span></div>
+                                <div style="display:flex;align-items:start;gap:.5rem"><i class="fas fa-check" style="color:var(--green);font-size:.75rem;margin-top:.35rem"></i><span style="font-size:.85rem;color:var(--text-muted)">Critical thinking focus</span></div>
+                                <div style="display:flex;align-items:start;gap:.5rem"><i class="fas fa-check" style="color:var(--green);font-size:.75rem;margin-top:.35rem"></i><span style="font-size:.85rem;color:var(--text-muted)">Project-based learning</span></div>
+                                <div style="display:flex;align-items:start;gap:.5rem"><i class="fas fa-check" style="color:var(--green);font-size:.75rem;margin-top:.35rem"></i><span style="font-size:.85rem;color:var(--text-muted)">Individual attention</span></div>
+                            </div>
+                        </div>
+                        <div style="text-align:center;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border)">
+                            <a href="mailto:renukha@thinkelution.com" class="btn btn-stem">Contact Renukha for Enrollment</a>
+                            <p style="margin-top:.4rem;color:var(--text-muted);font-size:.8rem">renukha@thinkelution.com</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+    <!-- END STEM CONTENT -->
+
+
+    <!-- ============================================ -->
+    <!-- SHARED: About + Contact + Footer -->
+    <!-- ============================================ -->
+
+    <!-- About -->
+    <section id="about" class="section-pad" style="background:var(--bg-card)">
+        <div class="container">
+            <div class="about-content">
+                <div class="about-text fade-in">
+                    <h2>About Thinkelution</h2>
+                    <p>Thinkelution is an AI research lab just getting started on our mission to build and publish open-source models for media generation. We're developing fine-tuned models, training specialized models from scratch, creating original datasets, and building novel multi-model pipelines — all in the open.</p>
+                    <p>Backed by 18+ years of experience in media and streaming technology, we combine deep protocol and architecture expertise with a fresh focus on AI research. We also run a dedicated STEM Learning initiative through deskmate-lms.thinkelution.com and stembots.in — certified by STEM.org.</p>
+                    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem">
+                        <a href="#contact" class="btn btn-primary"><i class="fas fa-handshake"></i> Partner With Us</a>
+                        <a href="https://github.com/thinkelution" target="_blank" class="btn btn-secondary"><i class="fab fa-github"></i> View Our Code</a>
+                    </div>
+                </div>
+                <div class="stats fade-in">
+                    <div class="stat">
+                        <span class="stat-number" style="color:var(--accent)">5</span>
+                        <span class="stat-label">Models in Development</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number" style="color:var(--purple)">3</span>
+                        <span class="stat-label">Datasets Planned</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">18+</span>
+                        <span class="stat-label">Years in Media Tech</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number" style="color:var(--green)">100%</span>
+                        <span class="stat-label">Open Source</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact" class="section-pad" style="background:var(--bg)">
+        <div class="container">
+            <div class="section-header fade-in">
+                <h2>Get In Touch</h2>
+                <p>Interested in AI model development, open-source collaboration, STEM education, or media streaming? Let's talk.</p>
+            </div>
+            <div class="contact-content">
+                <div class="contact-info fade-in">
+                    <h3>Reach Out</h3>
+                    <p>Whether you want to collaborate on AI research, need custom model development, or want to discuss STEM education — we're here.</p>
+                    <div style="margin-top:1.5rem">
+                        <h4 style="font-size:1rem;font-weight:600;margin-bottom:.75rem;color:var(--primary)">
+                            <i class="fas fa-brain" style="margin-right:.4rem;color:var(--accent)"></i> AI Research, Models & Services
+                        </h4>
+                        <ul class="contact-details" style="margin-left:1.5rem;margin-bottom:1.5rem">
+                            <li><i class="fas fa-envelope"></i><a href="mailto:vivek@thinkelution.com" style="color:var(--text-muted);text-decoration:none">vivek@thinkelution.com</a></li>
+                        </ul>
+                        <h4 style="font-size:1rem;font-weight:600;margin-bottom:.75rem;color:var(--primary)">
+                            <i class="fas fa-graduation-cap" style="margin-right:.4rem;color:var(--green)"></i> STEM Learning & Education
+                        </h4>
+                        <ul class="contact-details" style="margin-left:1.5rem;margin-bottom:1.5rem">
+                            <li><i class="fas fa-envelope"></i><a href="mailto:renukha@thinkelution.com" style="color:var(--text-muted);text-decoration:none">renukha@thinkelution.com</a></li>
+                        </ul>
+                    </div>
+                    <ul class="contact-details" style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border)">
+                        <li><i class="fas fa-map-marker-alt"></i><span>Chennai, India</span></li>
+                        <li><i class="fas fa-clock"></i><span>Mon – Fri: 9:00 AM – 6:00 PM IST</span></li>
+                    </ul>
+                </div>
+                <div class="fade-in">
+                    <div class="service-card" style="padding:1.5rem">
+                        <h3 style="font-size:1rem;font-weight:600;margin-bottom:1rem;color:var(--primary)">Why Work With Thinkelution?</h3>
+                        <div style="display:flex;flex-direction:column;gap:.75rem">
+                            <div style="display:flex;align-items:flex-start;gap:.6rem">
+                                <i class="fas fa-check" style="color:var(--accent);margin-top:.25rem;font-size:.75rem"></i>
+                                <div><strong style="font-size:.9rem">We Build Models, Not Wrappers</strong><br><span style="color:var(--text-muted);font-size:.8rem">Models and datasets actively in development on Hugging Face</span></div>
+                            </div>
+                            <div style="display:flex;align-items:flex-start;gap:.6rem">
+                                <i class="fas fa-check" style="color:var(--accent);margin-top:.25rem;font-size:.75rem"></i>
+                                <div><strong style="font-size:.9rem">Everything Open Source</strong><br><span style="color:var(--text-muted);font-size:.8rem">Full training code, datasets, and benchmarks public</span></div>
+                            </div>
+                            <div style="display:flex;align-items:flex-start;gap:.6rem">
+                                <i class="fas fa-check" style="color:var(--accent);margin-top:.25rem;font-size:.75rem"></i>
+                                <div><strong style="font-size:.9rem">18+ Years Media Expertise</strong><br><span style="color:var(--text-muted);font-size:.8rem">Deep streaming, protocol, and architecture knowledge</span></div>
+                            </div>
+                            <div style="display:flex;align-items:flex-start;gap:.6rem">
+                                <i class="fas fa-check" style="color:var(--accent);margin-top:.25rem;font-size:.75rem"></i>
+                                <div><strong style="font-size:.9rem">STEM.org Certified Educator</strong><br><span style="color:var(--text-muted);font-size:.8rem">Pre-KG to 12th grade STEM programs</span></div>
+                            </div>
+                        </div>
+                        <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;gap:.5rem;flex-wrap:wrap">
+                            <a href="https://huggingface.co/thinkelution" target="_blank" class="btn btn-dark" style="font-size:.8rem"><i class="fas fa-cube"></i> Hugging Face</a>
+                            <a href="https://github.com/thinkelution" target="_blank" class="btn btn-secondary" style="font-size:.8rem"><i class="fab fa-github"></i> GitHub</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div style="text-align:center;color:var(--text-muted);font-size:.8rem;line-height:1.6">
+                <div style="margin-bottom:.75rem">
+                    <strong style="color:var(--text)">Thinkelution Consultancy (OPC) Pvt Ltd</strong>
+                </div>
+                <div style="margin-bottom:.4rem">CIN: U62013TN2024OPC174053</div>
+                <div style="margin-bottom:1rem">
+                    Registered Address: Plot 10-B MG Nagar Part X, Adhanur, Urapakkam, Chennai, Tamil Nadu, India, 603202
+                </div>
+                <div style="display:flex;gap:1rem;justify-content:center;margin-bottom:1rem">
+                    <a href="https://github.com/thinkelution" target="_blank" style="color:var(--text-muted);text-decoration:none;font-size:1.1rem"><i class="fab fa-github"></i></a>
+                    <a href="https://huggingface.co/thinkelution" target="_blank" style="color:var(--text-muted);text-decoration:none;font-size:.85rem;font-weight:600">🤗 HF</a>
+                    <a href="https://linkedin.com/company/thinkelution" target="_blank" style="color:var(--text-muted);text-decoration:none;font-size:1.1rem"><i class="fab fa-linkedin"></i></a>
+                    <a href="https://twitter.com/thinkelution" target="_blank" style="color:var(--text-muted);text-decoration:none;font-size:1.1rem"><i class="fab fa-x-twitter"></i></a>
+                </div>
+                <div style="border-top:1px solid rgba(208,208,215,.3);padding-top:1rem;margin-top:.5rem">
+                    &copy; 2026 Thinkelution. All rights reserved.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Tab switching
+        const tabBtns=document.querySelectorAll('.tab-btn');
+        const aiContent=document.getElementById('ai-content');
+        const stemContent=document.getElementById('stem-content');
+        const aiNavItems=document.querySelectorAll('.ai-nav');
+        const stemNavItems=document.querySelectorAll('.stem-nav');
+
+        function switchTab(tab){
+            tabBtns.forEach(b=>{b.classList.remove('active');if(b.dataset.tab===tab)b.classList.add('active')});
+            if(tab==='ai'){
+                aiContent.classList.add('visible');
+                stemContent.classList.remove('visible');
+                aiNavItems.forEach(n=>n.style.display='');
+                stemNavItems.forEach(n=>n.style.display='none');
+            }else{
+                aiContent.classList.remove('visible');
+                stemContent.classList.add('visible');
+                aiNavItems.forEach(n=>n.style.display='none');
+                stemNavItems.forEach(n=>n.style.display='');
+            }
+            // Scroll to top smoothly
+            window.scrollTo({top:0,behavior:'smooth'});
+            // Re-observe fade-ins in newly visible content
+            setTimeout(()=>{
+                document.querySelectorAll('.tab-content.visible .fade-in:not(.visible)').forEach(el=>obs.observe(el));
+            },100);
+        }
+
+        tabBtns.forEach(btn=>{btn.addEventListener('click',()=>switchTab(btn.dataset.tab))});
+
+        // Mobile menu
+        const menuToggle=document.querySelector('.menu-toggle'),navLinks=document.querySelector('.nav-links');
+        menuToggle.addEventListener('click',()=>navLinks.classList.toggle('active'));
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',function(e){e.preventDefault();const t=document.querySelector(this.getAttribute('href'));if(t){window.scrollTo({top:t.offsetTop-56,behavior:'smooth'})}navLinks.classList.remove('active')})});
+
+        // Header shadow
+        window.addEventListener('scroll',()=>{document.querySelector('header').style.boxShadow=window.scrollY>20?'0 1px 3px rgba(0,0,0,.06)':'none'});
+
+        // Intersection observer for fade-in
+        const obs=new IntersectionObserver(e=>{e.forEach((en,i)=>{if(en.isIntersecting){setTimeout(()=>{en.target.classList.add('visible');en.target.style.transition='all .8s cubic-bezier(.25,.46,.45,.94)'},i*80)}})},{threshold:.1,rootMargin:'0px 0px -50px 0px'});
+        document.querySelectorAll('.fade-in').forEach((el,i)=>{el.style.transitionDelay=`${i*.06}s`;obs.observe(el)});
+
+        // Active nav highlighting
+        const sections=document.querySelectorAll('section[id]'),navAs=document.querySelectorAll('.nav-links a');
+        const sObs=new IntersectionObserver(e=>{e.forEach(en=>{if(en.isIntersecting){const id=en.target.getAttribute('id');navAs.forEach(a=>{a.classList.remove('active-link')});const al=document.querySelector(`.nav-links a[href="#${id}"]`);if(al)al.classList.add('active-link')}})},{threshold:.3,rootMargin:'-56px 0px -40% 0px'});
+        sections.forEach(s=>sObs.observe(s));
+
+        // Open Source project explorer
+        const osItems=document.querySelectorAll('.os-list-item');
+        const osPanels=document.querySelectorAll('.os-detail-panel');
+        function showProject(id){
+            osItems.forEach(i=>{i.classList.toggle('active',i.dataset.project===id)});
+            osPanels.forEach(p=>{p.classList.toggle('active',p.id==='detail-'+id)});
+        }
+        osItems.forEach(item=>{
+            item.addEventListener('mouseenter',()=>showProject(item.dataset.project));
+            item.addEventListener('click',()=>showProject(item.dataset.project));
+        });
+
+        // URL hash support for direct linking to STEM tab
+        if(window.location.hash==='#stem'||window.location.hash==='#stem-learning'){switchTab('stem')}
+    </script>
+</body>
+</html>

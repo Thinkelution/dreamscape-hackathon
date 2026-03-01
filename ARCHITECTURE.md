@@ -8,7 +8,7 @@ Dreamscape is a multi-agent AI system that transforms raw dream text into surrea
 
 ### 1. Dream Interpreter Agent
 
-- **Model**: `gemini-2.0-flash` (temperature 0.7)
+- **Model**: `gemini-2.5-flash` (temperature 0.7)
 - **Input**: Raw, messy dream text from the user
 - **Output**: Structured `DreamSchema` JSON containing:
   - 2-5 cinematically described scenes
@@ -20,49 +20,72 @@ Dreamscape is a multi-agent AI system that transforms raw dream text into surrea
 ### 2. Visual Director Agent (CORE)
 
 - **Model**: `gemini-2.0-flash-exp-image-generation` (temperature 0.9)
-- **Input**: DreamSchema scenes with visual direction
+- **Input**: DreamSchema scenes + user-selected art style + dreamer profile
 - **Output**: Interleaved text (narration) + images (scene visuals) in a single response
 - **Key technique**: `response_modalities=["TEXT", "IMAGE"]` — this is the hackathon's core requirement
+- **Art styles**: Anime, Realistic, Watercolor, Oil Painting, Pixel Art, Cyberpunk, Fantasy
+- **Dreamer profile**: When the dreamer appears as a character, their gender, age, and ethnicity are reflected in the generated images
 - **Why it matters**: A single API call produces both the narrator's poetic text AND the surrealist image for each scene, maintaining creative coherence between word and image
 
 ### 3. Narrative Voice Agent
 
-- **Service**: Google Cloud Text-to-Speech (WaveNet)
-- **Voice**: en-US-Wavenet-D (male, deep)
-- **Config**: Speaking rate 0.75x, pitch -2.0 (slow, ethereal quality)
+- **Service**: Google Cloud Text-to-Speech (Neural2)
+- **Voices**: 8 presets — Female/Male x Calm/Warm/Dramatic/Youthful
+- **Config**: Speaking rate 1.0x, pitch varies by preset, large-home-entertainment audio profile
 - **Output**: WAV audio segments concatenated via FFmpeg
+- **Voice mapping**:
+  - Female Calm: `en-US-Neural2-F` (pitch -1.0)
+  - Female Warm: `en-US-Neural2-C` (pitch 0.0)
+  - Female Dramatic: `en-US-Neural2-E` (pitch -2.0)
+  - Female Youthful: `en-US-Neural2-H` (pitch +2.0)
+  - Male Calm: `en-US-Neural2-D` (pitch -1.0)
+  - Male Warm: `en-US-Neural2-A` (pitch 0.0)
+  - Male Dramatic: `en-US-Neural2-J` (pitch -3.0)
+  - Male Youthful: `en-US-Neural2-I` (pitch +1.0)
 
 ### 4. Scene Composer Agent
 
 - **Tool**: FFmpeg
 - **Techniques**:
-  - Ken Burns (slow zoom/pan) on each scene image
-  - Cross-dissolve transitions between scenes
-  - Text narration overlays
-  - Audio mixing (narration + ambient)
-- **Output**: MP4 video (30-90 seconds, 1280x720)
+  - Crossfade transitions between scenes (`xfade` filter)
+  - Audio-driven scene duration (scene length adapts to narration audio via `ffprobe`)
+  - Audio mixing (narration layered onto video)
+  - `ultrafast` preset for hackathon speed
+- **Output**: MP4 video (1280x720)
 
-### 5. Dream Analyst Agent
+### 5. Dream Insight Agent
 
-- **Model**: `gemini-2.0-flash` (temperature 0.5, lower for analytical accuracy)
-- **Input**: Collection of interpreted dreams
+- **Model**: `gemini-2.5-flash` (temperature 0.6)
+- **Input**: DreamSchema + raw dream text
+- **Output**: `DreamAnalysis` with:
+  - 4-6 personality trait insights (e.g. "Creative Thinker", "Conflict Avoidant")
+  - Attitude summary — a warm, personal paragraph about the dreamer's emotional state
+  - Extracted emotions and symbols
+- **Runs**: After video composition, before marking the dream as complete
+
+### 6. Dream Analyst Agent (Journal-level)
+
+- **Model**: `gemini-2.5-flash` (temperature 0.5)
+- **Input**: Collection of interpreted dreams across a user's journal
 - **Output**: ThemeReport with recurring symbols, emotional patterns, and cross-dream connections
-- **Runs**: Asynchronously after dream completion
+- **Runs**: On-demand via `/api/analysis/refresh`
 
 ## Data Flow
 
 ```
-POST /api/dreams { text: "I was flying over..." }
+POST /api/dreams { text, art_style, dreamer_profile, narrator_config }
   |
   |-- Dream Interpreter --> DreamSchema JSON (saved to Firestore)
   |
   |-- Visual Director --> narration text + scene images (interleaved)
-  |     |-- Images uploaded to Cloud Storage
-  |     |-- Progress events emitted via WebSocket
+  |     |-- Images: base64 in API response + uploaded to Cloud Storage
+  |     |-- Progress events emitted via status polling
   |
-  |-- Narrative Voice --> WAV audio (uploaded to Cloud Storage)
+  |-- Narrative Voice --> WAV audio (uploaded to Cloud Storage, public URL)
   |
-  |-- Scene Composer --> MP4 video (uploaded to Cloud Storage)
+  |-- Scene Composer --> MP4 video (uploaded to Cloud Storage, public URL)
+  |
+  |-- Dream Insight --> Personality traits + attitude summary
   |
   |-- Response: { dream_id, status: "complete" }
 ```
@@ -71,18 +94,26 @@ POST /api/dreams { text: "I was flying over..." }
 
 ### DreamEntry (Firestore: `dreams` collection)
 - `id`: UUID
-- `user_id`: Firebase Auth UID
+- `user_id`: Firebase Auth UID or "anonymous"
 - `raw_text`: Original dream input
+- `art_style`: Selected visual style (e.g. "anime", "realistic")
+- `dreamer_profile`: { gender, age_range, ethnicity }
+- `narrator_config`: { gender, style }
 - `dream_schema`: Interpreted DreamSchema
 - `generated_assets`: URLs to scene images, narration audio, final video
-- `analysis`: Extracted emotions, symbols, title, mood
-- `status`: pending | interpreting | generating_visuals | generating_narration | composing_video | complete | failed
+- `analysis`: Emotions, symbols, dreamer_insights, attitude_summary
+- `status`: pending | interpreting | generating_visuals | generating_narration | composing_video | analyzing | complete | failed
 
 ### DreamSchema (generated by Interpreter)
 - `title`: Poetic dream title
 - `scenes[]`: Description, entities, emotion, visual style, transition
 - `symbols[]`: Name, psychological meaning, frequency
 - `overall_mood`, `narrative_arc`, `color_palette`
+
+### DreamAnalysis (generated by Insight Agent)
+- `emotions[]`, `symbols[]`, `title`, `mood`
+- `dreamer_insights[]`: { trait, description } — personality dimensions
+- `attitude_summary`: Personal paragraph about the dreamer
 
 ### ThemeReport (generated by Analyst)
 - `recurring_symbols[]`: Symbol, count across dreams, interpretation
@@ -93,17 +124,18 @@ POST /api/dreams { text: "I was flying over..." }
 
 ### Cloud Run (Backend)
 - Docker container: Python 3.12 + FFmpeg
-- Service account: `backend@dreamscape-hackathon.iam.gserviceaccount.com`
-- Memory: 1Gi, CPU: 2, Timeout: 300s
+- Memory: 2Gi, CPU: 2, Timeout: 300s
 - Authentication: Application Default Credentials (no key files)
+- Gemini API key injected via environment variable
 
 ### Firebase Hosting (Frontend)
-- Static export from Next.js
+- Static export from Next.js 14
 - Rewrites `/api/**` to Cloud Run backend
 - HTTPS with Firebase-managed SSL
 
 ### Cloud Storage (`dreamscape-media` bucket)
 - Path pattern: `dreams/{dream_id}/scene_{n}.png`, `narration.wav`, `dream_film.mp4`
+- Public read access via `roles/storage.objectViewer` for `allUsers`
 
 ### Firestore (Native mode)
 - Collection: `dreams` — indexed by `user_id` and `created_at`
@@ -120,6 +152,7 @@ POST /api/dreams { text: "I was flying over..." }
 
 - **Next.js 14** with App Router, static export
 - **Dark theme**: Purple/indigo gradient, star-field animation
-- **Screens**: Dream Input, Generation Progress (pipeline viz), Dream Film Player, Journal Gallery, Analysis Dashboard
+- **Screens**: Dream Input (with config panels), Generation Progress (pipeline viz), Dream Film Player (with personality insights), Journal Gallery, Analysis Dashboard
 - **Real-time**: Polls `/api/dreams/:id/status` for progress events
 - **Animations**: Framer Motion for smooth transitions
+- **Configuration**: Collapsible panel for dreamer profile + narrator voice selection

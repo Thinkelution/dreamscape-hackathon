@@ -1,13 +1,10 @@
 """Dream API endpoints — submit dreams, track progress, retrieve results."""
 
 import asyncio
-import json
 import logging
 import traceback
-from typing import Optional
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from pydantic import BaseModel
 
 from backend.agents.dream_interpreter import interpret_dream
 from backend.agents.visual_director import (
@@ -18,7 +15,6 @@ from backend.models.schemas import (
     DreamCreateRequest,
     DreamEntry,
     DreamStatus,
-    GeneratedAssets,
 )
 from backend.services import firestore_service, storage_service
 
@@ -66,7 +62,7 @@ async def _run_pipeline(dream: DreamEntry):
             "symbols": [s.name for s in dream_schema.symbols],
         })
 
-        # Phase 2: Generate visuals (INTERLEAVED OUTPUT)
+        # Phase 2: Generate visuals (INTERLEAVED OUTPUT — core hackathon feature)
         await _update_status(dream, DreamStatus.GENERATING_VISUALS)
         scene_results = await generate_all_visuals(
             dream_schema,
@@ -79,23 +75,24 @@ async def _run_pipeline(dream: DreamEntry):
             dream_schema.scenes[i].narration_text = narration
 
             if image_bytes:
+                # Always store base64 for API response (browser-displayable)
+                b64 = image_bytes_to_base64(image_bytes)
+                dream_schema.scenes[i].image_url = b64
+                scene_images.append(b64)
+
+                # Also upload to GCS for persistence (non-blocking)
                 try:
                     gcs_path = f"dreams/{dream.id}/scene_{i}.png"
-                    uri = storage_service.upload_bytes(image_bytes, gcs_path, "image/png")
-                    scene_images.append(uri)
-                    dream_schema.scenes[i].image_url = uri
+                    storage_service.upload_bytes(image_bytes, gcs_path, "image/png")
                 except Exception as e:
                     logger.warning(f"GCS upload failed for scene {i}: {e}")
-                    b64 = image_bytes_to_base64(image_bytes)
-                    scene_images.append(b64)
-                    dream_schema.scenes[i].image_url = b64
 
             scene_narrations.append(narration)
 
         dream.generated_assets.scene_images = scene_images
         dream.dream_schema = dream_schema
 
-        # Phase 3: Narration (TTS) — will be wired in next phase
+        # Phase 3: Narration (TTS)
         await _update_status(dream, DreamStatus.GENERATING_NARRATION)
         try:
             from backend.agents.narrative_voice import generate_narration
@@ -103,12 +100,10 @@ async def _run_pipeline(dream: DreamEntry):
             if audio_path:
                 dream.generated_assets.narration_audio = audio_path
                 await _emit_progress(dream.id, "narration_ready", {"audio_url": audio_path})
-        except ImportError:
-            logger.info("Narrative voice agent not yet implemented, skipping TTS")
         except Exception as e:
-            logger.warning(f"TTS generation failed: {e}")
+            logger.warning(f"TTS generation failed (continuing without audio): {e}")
 
-        # Phase 4: Video composition — will be wired in next phase
+        # Phase 4: Video composition
         await _update_status(dream, DreamStatus.COMPOSING_VIDEO)
         try:
             from backend.agents.scene_composer import compose_dream_film
@@ -116,10 +111,8 @@ async def _run_pipeline(dream: DreamEntry):
             if video_path:
                 dream.generated_assets.final_video = video_path
                 await _emit_progress(dream.id, "video_complete", {"video_url": video_path})
-        except ImportError:
-            logger.info("Scene composer not yet implemented, skipping video")
         except Exception as e:
-            logger.warning(f"Video composition failed: {e}")
+            logger.warning(f"Video composition failed (continuing without video): {e}")
 
         # Done
         await _update_status(dream, DreamStatus.COMPLETE)
@@ -156,8 +149,7 @@ async def list_dreams(user_id: str = "anonymous"):
     try:
         dreams = await firestore_service.list_dreams(user_id)
         return {"dreams": [d.model_dump(mode="json") for d in dreams]}
-    except Exception as e:
-        # Fallback to in-memory results
+    except Exception:
         results = [v for v in _dream_results.values() if v.get("user_id") == user_id]
         return {"dreams": results}
 

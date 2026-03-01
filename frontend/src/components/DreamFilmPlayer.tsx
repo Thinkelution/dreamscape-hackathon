@@ -60,7 +60,7 @@ export default function DreamFilmPlayer({
           {/* Scene viewer */}
           {scenes.length > 0 && (
             <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-br from-violet-950/50 to-indigo-950/50 aspect-video mb-4 flex items-center justify-center">
-              {scenes[activeScene]?.image_url?.startsWith("data:") ? (
+              {scenes[activeScene]?.image_url ? (
                 <img
                   src={scenes[activeScene].image_url}
                   alt={scenes[activeScene].description}

@@ -114,6 +114,16 @@ async def _run_pipeline(dream: DreamEntry):
         except Exception as e:
             logger.warning(f"Video composition failed (continuing without video): {e}")
 
+        # Convert gs:// URIs to public HTTPS URLs for browser access
+        if dream.generated_assets.narration_audio:
+            dream.generated_assets.narration_audio = _to_public_url(
+                dream.generated_assets.narration_audio
+            )
+        if dream.generated_assets.final_video:
+            dream.generated_assets.final_video = _to_public_url(
+                dream.generated_assets.final_video
+            )
+
         # Done
         await _update_status(dream, DreamStatus.COMPLETE)
         _dream_results[dream.id] = dream.model_dump(mode="json")
@@ -127,6 +137,13 @@ async def _run_pipeline(dream: DreamEntry):
         logger.error(f"Pipeline failed for dream {dream.id}: {e}\n{traceback.format_exc()}")
         await _update_status(dream, DreamStatus.FAILED)
         await _emit_progress(dream.id, "pipeline_error", {"error": str(e)})
+
+
+def _to_public_url(uri: str) -> str:
+    """Convert gs:// URI to a public HTTPS URL."""
+    if uri.startswith("gs://"):
+        return uri.replace("gs://", "https://storage.googleapis.com/", 1)
+    return uri
 
 
 async def _update_status(dream: DreamEntry, status: DreamStatus):

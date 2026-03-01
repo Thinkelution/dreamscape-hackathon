@@ -7,6 +7,8 @@ import {
   getDream,
   type DreamProgress,
   type DreamResult,
+  type DreamerProfile,
+  type NarratorConfig,
 } from "@/lib/api";
 
 export type PipelineStage =
@@ -35,14 +37,20 @@ export function useDreamPipeline() {
   }, []);
 
   const startDream = useCallback(
-    async (text: string, userId = "anonymous") => {
+    async (
+      text: string,
+      userId = "anonymous",
+      artStyle = "anime",
+      dreamerProfile?: DreamerProfile,
+      narratorConfig?: NarratorConfig,
+    ) => {
       setStage("submitting");
       setProgress([]);
       setResult(null);
       setError(null);
 
       try {
-        const response = await submitDream(text, userId);
+        const response = await submitDream(text, userId, artStyle, dreamerProfile, narratorConfig);
         setDreamId(response.dream_id);
         setStage("interpreting");
 

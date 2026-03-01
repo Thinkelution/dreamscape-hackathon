@@ -1,5 +1,16 @@
 const API_BASE = "/api";
 
+export interface DreamerProfile {
+  gender: string;
+  age_range: string;
+  ethnicity: string;
+}
+
+export interface NarratorConfig {
+  gender: string;
+  style: string;
+}
+
 export interface DreamCreateResponse {
   dream_id: string;
   status: string;
@@ -15,6 +26,11 @@ export interface DreamStatusResponse {
   dream_id: string;
   status: string;
   progress: DreamProgress[];
+}
+
+export interface DreamerInsight {
+  trait: string;
+  description: string;
 }
 
 export interface DreamResult {
@@ -40,17 +56,34 @@ export interface DreamResult {
     narration_audio?: string;
     final_video?: string;
   };
+  analysis?: {
+    emotions: string[];
+    symbols: string[];
+    title: string;
+    mood: string;
+    dreamer_insights: DreamerInsight[];
+    attitude_summary: string;
+  };
   created_at: string;
 }
 
 export async function submitDream(
   text: string,
-  userId = "anonymous"
+  userId = "anonymous",
+  artStyle = "anime",
+  dreamerProfile?: DreamerProfile,
+  narratorConfig?: NarratorConfig
 ): Promise<DreamCreateResponse> {
   const res = await fetch(`${API_BASE}/dreams`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, user_id: userId }),
+    body: JSON.stringify({
+      text,
+      user_id: userId,
+      art_style: artStyle,
+      dreamer_profile: dreamerProfile ?? { gender: "unspecified", age_range: "adult", ethnicity: "unspecified" },
+      narrator_config: narratorConfig ?? { gender: "female", style: "calm" },
+    }),
   });
   if (!res.ok) throw new Error(`Failed to submit dream: ${res.statusText}`);
   return res.json();

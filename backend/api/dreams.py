@@ -30,7 +30,13 @@ _dream_results: dict[str, dict] = {}
 @router.post("/dreams")
 async def create_dream(request: DreamCreateRequest):
     """Submit a new dream for processing through the full pipeline."""
-    dream = DreamEntry(raw_text=request.text, user_id=request.user_id)
+    dream = DreamEntry(
+        raw_text=request.text,
+        user_id=request.user_id,
+        art_style=request.art_style,
+        dreamer_profile=request.dreamer_profile,
+        narrator_config=request.narrator_config,
+    )
 
     try:
         await firestore_service.save_dream(dream)
@@ -66,6 +72,8 @@ async def _run_pipeline(dream: DreamEntry):
         await _update_status(dream, DreamStatus.GENERATING_VISUALS)
         scene_results = await generate_all_visuals(
             dream_schema,
+            art_style=dream.art_style,
+            dreamer_profile=dream.dreamer_profile,
             progress_callback=lambda event, data: _emit_progress(dream.id, event, data),
         )
 
@@ -96,7 +104,7 @@ async def _run_pipeline(dream: DreamEntry):
         await _update_status(dream, DreamStatus.GENERATING_NARRATION)
         try:
             from backend.agents.narrative_voice import generate_narration
-            audio_path = await generate_narration(dream.id, scene_narrations)
+            audio_path = await generate_narration(dream.id, scene_narrations, dream.narrator_config)
             if audio_path:
                 dream.generated_assets.narration_audio = audio_path
                 await _emit_progress(dream.id, "narration_ready", {"audio_url": audio_path})
@@ -123,6 +131,19 @@ async def _run_pipeline(dream: DreamEntry):
             dream.generated_assets.final_video = _to_public_url(
                 dream.generated_assets.final_video
             )
+
+        # Phase 5: Dreamer insight analysis
+        await _update_status(dream, DreamStatus.ANALYZING)
+        try:
+            from backend.agents.dream_insight import analyze_single_dream
+            analysis = await analyze_single_dream(dream_schema, dream.raw_text)
+            dream.analysis = analysis
+            await _emit_progress(dream.id, "analysis_complete", {
+                "attitude_summary": analysis.attitude_summary,
+                "insights_count": len(analysis.dreamer_insights),
+            })
+        except Exception as e:
+            logger.warning(f"Dream insight analysis failed (continuing): {e}")
 
         # Done
         await _update_status(dream, DreamStatus.COMPLETE)

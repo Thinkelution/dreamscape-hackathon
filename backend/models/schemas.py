@@ -19,6 +19,17 @@ class DreamStatus(str, Enum):
     FAILED = "failed"
 
 
+class DreamerProfile(BaseModel):
+    gender: str = "unspecified"
+    age_range: str = "adult"
+    ethnicity: str = "unspecified"
+
+
+class NarratorConfig(BaseModel):
+    gender: str = "female"
+    style: str = "calm"
+
+
 class SymbolSchema(BaseModel):
     name: str
     possible_meaning: str
@@ -51,17 +62,27 @@ class GeneratedAssets(BaseModel):
     final_video: Optional[str] = None
 
 
+class DreamerInsight(BaseModel):
+    trait: str
+    description: str
+
+
 class DreamAnalysis(BaseModel):
     emotions: list[str] = []
     symbols: list[str] = []
     title: str = ""
     mood: str = ""
+    dreamer_insights: list[DreamerInsight] = []
+    attitude_summary: str = ""
 
 
 class DreamEntry(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str = "anonymous"
     raw_text: str
+    art_style: str = "anime"
+    dreamer_profile: DreamerProfile = Field(default_factory=DreamerProfile)
+    narrator_config: NarratorConfig = Field(default_factory=NarratorConfig)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     dream_schema: Optional[DreamSchema] = None
     generated_assets: GeneratedAssets = Field(default_factory=GeneratedAssets)
@@ -72,6 +93,9 @@ class DreamEntry(BaseModel):
 class DreamCreateRequest(BaseModel):
     text: str
     user_id: str = "anonymous"
+    art_style: str = "anime"
+    dreamer_profile: DreamerProfile = Field(default_factory=DreamerProfile)
+    narrator_config: NarratorConfig = Field(default_factory=NarratorConfig)
 
 
 class RecurringSymbol(BaseModel):

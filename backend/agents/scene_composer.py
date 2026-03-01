@@ -1,8 +1,10 @@
 """Scene Composer Agent: Composes surrealist dream film from images + narration using FFmpeg.
 
-Uses simple crossfade transitions between scene images with optional audio mixing."""
+Uses crossfade transitions between scene images with audio mixing.
+Video duration is driven by narration audio length when available."""
 
 import base64
+import json
 import os
 import subprocess
 import tempfile
@@ -16,8 +18,26 @@ from backend.services.storage_service import upload_file
 
 TARGET_WIDTH = 1280
 TARGET_HEIGHT = 720
-SCENE_DURATION = 6
+DEFAULT_SCENE_DURATION = 8
 FADE_DURATION = 1
+
+
+def _get_audio_duration(audio_path: str) -> float:
+    """Get audio duration in seconds using ffprobe."""
+    try:
+        result = subprocess.run(
+            [
+                "ffprobe", "-v", "quiet",
+                "-print_format", "json",
+                "-show_format",
+                audio_path,
+            ],
+            capture_output=True, text=True, timeout=10,
+        )
+        info = json.loads(result.stdout)
+        return float(info["format"]["duration"])
+    except Exception:
+        return 0
 
 
 async def compose_dream_film(dream: DreamEntry) -> str | None:
@@ -41,26 +61,46 @@ async def compose_dream_film(dream: DreamEntry) -> str | None:
         if not image_paths:
             return None
 
-        video_path = os.path.join(tmpdir, "dream_film.mp4")
-        _build_video(image_paths, video_path)
-
-        # Mix narration audio if available
+        # Resolve narration audio to a local file
+        local_audio = None
         if dream.generated_assets.narration_audio:
             audio_src = dream.generated_assets.narration_audio
-            local_audio = None
-            if os.path.exists(audio_src):
-                local_audio = audio_src
+            if audio_src.startswith("https://"):
+                local_audio = os.path.join(tmpdir, "narration.wav")
+                try:
+                    _download_url(audio_src, local_audio)
+                except Exception:
+                    local_audio = None
             elif audio_src.startswith("gs://"):
                 local_audio = os.path.join(tmpdir, "narration.wav")
                 try:
                     _download_gcs_file(audio_src, local_audio)
                 except Exception:
                     local_audio = None
+            elif os.path.exists(audio_src):
+                local_audio = audio_src
 
-            if local_audio and os.path.exists(local_audio):
-                final_path = os.path.join(tmpdir, "dream_film_final.mp4")
-                _mix_audio(video_path, local_audio, final_path)
-                video_path = final_path
+        # Calculate per-scene duration: fit to audio length if available
+        scene_duration = DEFAULT_SCENE_DURATION
+        if local_audio and os.path.exists(local_audio):
+            audio_dur = _get_audio_duration(local_audio)
+            if audio_dur > 0:
+                n = len(image_paths)
+                # Total video needs to be >= audio duration + a small buffer
+                total_fades = (n - 1) * FADE_DURATION if n > 1 else 0
+                scene_duration = max(
+                    DEFAULT_SCENE_DURATION,
+                    (audio_dur + total_fades + 2) / n,
+                )
+
+        video_path = os.path.join(tmpdir, "dream_film.mp4")
+        _build_video(image_paths, video_path, scene_duration)
+
+        # Mix in narration audio
+        if local_audio and os.path.exists(local_audio):
+            final_path = os.path.join(tmpdir, "dream_film_final.mp4")
+            _mix_audio(video_path, local_audio, final_path)
+            video_path = final_path
 
         # Upload to GCS
         try:
@@ -73,16 +113,16 @@ async def compose_dream_film(dream: DreamEntry) -> str | None:
             return fallback
 
 
-def _build_video(image_paths: list[str], output_path: str):
-    """Build video from images with simple crossfade transitions."""
+def _build_video(image_paths: list[str], output_path: str, scene_duration: float):
+    """Build video from images with crossfade transitions."""
     n = len(image_paths)
+    dur = str(int(scene_duration))
 
     if n == 1:
-        # Single image: just make a static video
         subprocess.run(
             [
                 "ffmpeg", "-y",
-                "-loop", "1", "-t", str(SCENE_DURATION),
+                "-loop", "1", "-t", dur,
                 "-i", image_paths[0],
                 "-c:v", "libx264", "-pix_fmt", "yuv420p",
                 "-vf", f"scale={TARGET_WIDTH}:{TARGET_HEIGHT}",
@@ -94,25 +134,26 @@ def _build_video(image_paths: list[str], output_path: str):
         )
         return
 
-    # Multiple images: use xfade between them
     inputs = []
     for img_path in image_paths:
-        inputs.extend(["-loop", "1", "-t", str(SCENE_DURATION), "-i", img_path])
+        inputs.extend(["-loop", "1", "-t", dur, "-i", img_path])
 
     # Build xfade filter chain
     if n == 2:
-        offset = SCENE_DURATION - FADE_DURATION
+        offset = scene_duration - FADE_DURATION
         filter_complex = (
-            f"[0:v][1:v]xfade=transition=fade:duration={FADE_DURATION}:offset={offset},format=yuv420p[outv]"
+            f"[0:v][1:v]xfade=transition=fade:duration={FADE_DURATION}"
+            f":offset={offset},format=yuv420p[outv]"
         )
     else:
         parts = []
         prev = "0:v"
         for i in range(1, n):
-            offset = SCENE_DURATION - FADE_DURATION + (i - 1) * (SCENE_DURATION - FADE_DURATION)
+            offset = i * scene_duration - i * FADE_DURATION
             out_label = "outv" if i == n - 1 else f"xf{i}"
             parts.append(
-                f"[{prev}][{i}:v]xfade=transition=fade:duration={FADE_DURATION}:offset={offset}[{out_label}]"
+                f"[{prev}][{i}:v]xfade=transition=fade"
+                f":duration={FADE_DURATION}:offset={offset}[{out_label}]"
             )
             prev = out_label
         filter_complex = "; ".join(parts)
@@ -128,16 +169,16 @@ def _build_video(image_paths: list[str], output_path: str):
         output_path,
     ]
 
-    subprocess.run(cmd, check=True, capture_output=True, timeout=60)
+    subprocess.run(cmd, check=True, capture_output=True, timeout=120)
 
 
 def _mix_audio(video_path: str, audio_path: str, output_path: str):
+    """Mix narration audio into the video. Audio determines final duration."""
     subprocess.run(
         [
             "ffmpeg", "-y",
             "-i", video_path, "-i", audio_path,
             "-c:v", "copy", "-c:a", "aac", "-b:a", "128k",
-            "-shortest",
             output_path,
         ],
         check=True, capture_output=True, timeout=30,
@@ -184,3 +225,9 @@ def _download_gcs_file(gcs_uri: str, local_path: str):
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(blob_path)
     blob.download_to_filename(local_path)
+
+
+def _download_url(url: str, local_path: str):
+    """Download a file from an HTTPS URL."""
+    import urllib.request
+    urllib.request.urlretrieve(url, local_path)

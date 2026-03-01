@@ -19,6 +19,7 @@ export default function DreamFilmPlayer({
   const schema = dream.dream_schema;
   const scenes = schema?.scenes ?? [];
   const assets = dream.generated_assets;
+  const analysis = dream.analysis;
 
   return (
     <motion.div
@@ -57,7 +58,6 @@ export default function DreamFilmPlayer({
         </div>
       ) : (
         <div className="mb-8">
-          {/* Scene viewer */}
           {scenes.length > 0 && (
             <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-br from-violet-950/50 to-indigo-950/50 aspect-video mb-4 flex items-center justify-center">
               {scenes[activeScene]?.image_url ? (
@@ -75,7 +75,6 @@ export default function DreamFilmPlayer({
                 </div>
               )}
 
-              {/* Narration overlay */}
               {showOverlay && scenes[activeScene]?.narration_text && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -88,7 +87,6 @@ export default function DreamFilmPlayer({
                 </motion.div>
               )}
 
-              {/* Toggle overlay */}
               <button
                 onClick={() => setShowOverlay(!showOverlay)}
                 className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white/60 hover:text-white/90"
@@ -98,7 +96,6 @@ export default function DreamFilmPlayer({
             </div>
           )}
 
-          {/* Scene navigation */}
           <div className="flex gap-2 overflow-x-auto pb-2">
             {scenes.map((scene, i) => (
               <button
@@ -114,6 +111,16 @@ export default function DreamFilmPlayer({
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Audio Player */}
+      {assets?.narration_audio && (
+        <div className="mb-8 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+          <h3 className="text-sm font-medium text-white/40 uppercase tracking-wider mb-3">
+            Narration Audio
+          </h3>
+          <audio src={assets.narration_audio} controls className="w-full" />
         </div>
       )}
 
@@ -166,6 +173,53 @@ export default function DreamFilmPlayer({
           )}
         </div>
       </div>
+
+      {/* Dreamer Insights */}
+      {analysis && (analysis.dreamer_insights?.length > 0 || analysis.attitude_summary) && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+          className="mb-8"
+        >
+          <div className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-950/30 to-indigo-950/20 p-6">
+            <h3 className="text-lg font-semibold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent mb-5">
+              What Your Dream Reveals About You
+            </h3>
+
+            {/* Attitude Summary */}
+            {analysis.attitude_summary && (
+              <div className="mb-6 p-4 rounded-xl bg-white/[0.03] border border-white/5">
+                <p className="text-white/75 leading-relaxed italic">
+                  {analysis.attitude_summary}
+                </p>
+              </div>
+            )}
+
+            {/* Individual Insights */}
+            {analysis.dreamer_insights?.length > 0 && (
+              <div className="grid md:grid-cols-2 gap-3">
+                {analysis.dreamer_insights.map((insight, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 + i * 0.1, duration: 0.4 }}
+                    className="p-3.5 rounded-xl bg-white/[0.03] border border-white/5"
+                  >
+                    <p className="text-sm font-semibold text-violet-300 mb-1.5">
+                      {insight.trait}
+                    </p>
+                    <p className="text-xs text-white/50 leading-relaxed">
+                      {insight.description}
+                    </p>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
 
       {/* Actions */}
       <div className="flex justify-center gap-4">

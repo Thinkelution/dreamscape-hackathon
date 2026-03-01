@@ -21,8 +21,13 @@ export default function Home() {
     useDreamPipeline();
   const { userId } = useAuth();
 
-  const handleSubmit = (text: string) => {
-    startDream(text, userId);
+  const handleSubmit = (
+    text: string,
+    artStyle: string,
+    dreamerProfile?: { gender: string; age_range: string; ethnicity: string },
+    narratorConfig?: { gender: string; style: string },
+  ) => {
+    startDream(text, userId, artStyle, dreamerProfile, narratorConfig);
   };
 
   const handleNewDream = () => {

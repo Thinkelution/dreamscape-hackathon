@@ -8,7 +8,9 @@ from google.genai import types
 from PIL import Image
 from io import BytesIO
 
-API_KEY = "AIzaSyC0QlN_yWtph0CnkwABggBaZFO9A7X7kzc"
+API_KEY = os.environ.get("GOOGLE_API_KEY", "")
+if not API_KEY:
+    raise RuntimeError("Set GOOGLE_API_KEY environment variable first")
 client = genai.Client(api_key=API_KEY)
 
 print("Testing interleaved output (text + image in one response)...")

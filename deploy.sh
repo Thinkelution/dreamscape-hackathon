@@ -45,16 +45,11 @@ cd ..
 echo "--- Building and deploying frontend ---"
 cd frontend
 
-# Create production .env with backend URL
-cat > .env.production <<EOF
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyD6qfA1PfrF5PZx7qSS0k00PYnn9vll034
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=dreamscape-hackathon.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=dreamscape-hackathon
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=dreamscape-hackathon.firebasestorage.app
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=411432678431
-NEXT_PUBLIC_FIREBASE_APP_ID=1:411432678431:web:15a0c7d640aa7fcf97d12a
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-JXMQE6ZBVY
-EOF
+# Ensure .env.local exists with Firebase config (not committed to repo)
+if [ ! -f .env.local ]; then
+  echo "ERROR: frontend/.env.local not found. Copy from .env.example and fill in your Firebase config."
+  exit 1
+fi
 
 npm run build
 
